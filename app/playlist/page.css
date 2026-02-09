@@ -1,0 +1,230 @@
+.playlist-page {
+    min-height: calc(100vh - 80px);
+    padding: var(--spacing-xl) 0;
+}
+
+.playlist-title {
+    font-size: var(--font-size-3xl);
+    margin-bottom: var(--spacing-xl);
+    text-align: center;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.playlist-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xl);
+}
+
+@media (min-width: 1024px) {
+    .playlist-layout {
+        grid-template-columns: 2fr 1fr;
+    }
+}
+
+/* プレイヤーセクション */
+.player-section {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-lg);
+}
+
+.current-info {
+    margin-bottom: var(--spacing-md);
+}
+
+.current-info h2 {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: var(--spacing-xs);
+}
+
+.current-song-title {
+    font-size: var(--font-size-2xl);
+    margin-bottom: var(--spacing-xs);
+    color: var(--color-text);
+}
+
+.current-vtuber {
+    font-size: var(--font-size-base);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.player-wrapper {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%;
+    /* 16:9 */
+    margin-bottom: var(--spacing-md);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: #000;
+}
+
+.player-wrapper #youtube-player {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.player-controls {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: center;
+}
+
+.control-btn {
+    flex: 1;
+    max-width: 200px;
+}
+
+/* プレイリストセクション */
+.playlist-section {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-lg);
+    max-height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+
+.playlist-section-title {
+    font-size: var(--font-size-xl);
+    margin-bottom: var(--spacing-md);
+    color: var(--color-text);
+}
+
+.playlist-items {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.playlist-item {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-bottom: var(--spacing-sm);
+}
+
+.playlist-item:hover {
+    background: rgba(255, 107, 157, 0.1);
+}
+
+.playlist-item.active {
+    background: linear-gradient(135deg, rgba(255, 107, 157, 0.2), rgba(197, 107, 255, 0.2));
+    border-left: 4px solid var(--color-primary);
+}
+
+.playlist-item-number {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-light);
+}
+
+.playlist-item.active .playlist-item-number {
+    color: var(--color-primary);
+    font-size: var(--font-size-lg);
+}
+
+.playlist-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.playlist-item-title {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    margin-bottom: var(--spacing-xs);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.playlist-item.active .playlist-item-title {
+    color: var(--color-primary);
+}
+
+.playlist-item-meta {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-light);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.playlist-item-vtuber {
+    font-weight: var(--font-weight-medium);
+}
+
+.playlist-item-separator {
+    opacity: 0.5;
+}
+
+.playlist-item-date {
+    opacity: 0.7;
+}
+
+/* ローディング・空状態 */
+.loading,
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-3xl);
+    text-align: center;
+}
+
+.loading p {
+    margin-top: var(--spacing-md);
+    color: var(--color-text-light);
+}
+
+.empty-state p {
+    color: var(--color-text-light);
+    font-size: var(--font-size-lg);
+}
+
+/* スクロールバーのスタイル */
+.playlist-items::-webkit-scrollbar {
+    width: 8px;
+}
+
+.playlist-items::-webkit-scrollbar-track {
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+}
+
+.playlist-items::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: var(--radius-sm);
+}
+
+.playlist-items::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary);
+}
+
+/* モバイル対応 */
+@media (max-width: 1023px) {
+    .playlist-section {
+        max-height: 400px;
+    }
+}

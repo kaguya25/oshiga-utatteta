@@ -1,65 +1,130 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { CoverSong } from '@/types';
+import CoverSongCard from '@/components/CoverSongCard';
+import SearchBar from '@/components/SearchBar';
+import './page.css';
 
 export default function Home() {
+  const [songs, setSongs] = useState<CoverSong[]>([]);
+  const [filteredSongs, setFilteredSongs] = useState<CoverSong[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Fetch cover songs from Supabase
+  useEffect(() => {
+    const fetchSongs = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('cover_songs')
+          .select('*')
+          .order('published_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching songs:', error);
+          return;
+        }
+
+        setSongs(data || []);
+        setFilteredSongs(data || []);
+      } catch (error) {
+        console.error('Unexpected error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSongs();
+  }, []);
+
+  // Filter songs based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredSongs(songs);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filtered = songs.filter((song) => {
+      return (
+        song.song_title.toLowerCase().includes(query) ||
+        song.vtuber_name.toLowerCase().includes(query) ||
+        song.artist_name.toLowerCase().includes(query)
+      );
+    });
+
+    setFilteredSongs(filtered);
+  }, [searchQuery, songs]);
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  if (loading) {
+    return (
+      <div className="page-container">
+        <div className="loading-container">
+          <div className="spinner"></div>
+          <p>読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="page-container">
+      <section className="hero-section">
+        <div className="container">
+          <h1 className="hero-title fade-in">
+            推しが歌ってた楽曲を探そう
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="hero-subtitle fade-in">
+            Vtuberがカバーしたあなたのお気に入りの曲を見つけて、<br />
+            YouTubeとSpotifyで聴き比べよう
           </p>
+          <div className="hero-search fade-in">
+            <SearchBar onSearch={handleSearch} />
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      <section className="songs-section">
+        <div className="container">
+          {searchQuery && (
+            <p className="search-results-text">
+              「{searchQuery}」の検索結果: {filteredSongs.length}件
+            </p>
+          )}
+
+          {filteredSongs.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">
+                <svg
+                  width="64"
+                  height="64"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.35-4.35"></path>
+                </svg>
+              </div>
+              <h3>カバー曲が見つかりませんでした</h3>
+              <p>別のキーワードで検索してみてください</p>
+            </div>
+          ) : (
+            <div className="songs-grid grid grid-cols-4">
+              {filteredSongs.map((song) => (
+                <CoverSongCard key={song.id} song={song} />
+              ))}
+            </div>
+          )}
         </div>
-      </main>
+      </section>
     </div>
   );
 }

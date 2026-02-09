@@ -1,0 +1,83 @@
+/* CSS Variables - Design System */
+:root {
+  /* Primary Colors */
+  --color-primary: #FF6B9D;
+  --color-primary-light: #FF8DB3;
+  --color-primary-dark: #E64A7F;
+  
+  /* Secondary Colors */
+  --color-secondary: #C56BFF;
+  --color-secondary-light: #D68FFF;
+  --color-secondary-dark: #A847E6;
+  
+  /* Accent Colors */
+  --color-accent: #FFD93D;
+  --color-accent-light: #FFE470;
+  --color-accent-dark: #E6C01F;
+  
+  /* Neutral Colors */
+  --color-bg: #F8F9FA;
+  --color-bg-dark: #E9ECEF;
+  --color-surface: #FFFFFF;
+  --color-text: #2D3748;
+  --color-text-light: #718096;
+  --color-border: #E2E8F0;
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-2xl: 3rem;     /* 48px */
+  --spacing-3xl: 4rem;     /* 64px */
+  
+  /* Border Radius */
+  --radius-sm: 0.25rem;    /* 4px */
+  --radius-md: 0.5rem;     /* 8px */
+  --radius-lg: 1rem;       /* 16px */
+  --radius-xl: 1.5rem;     /* 24px */
+  --radius-full: 9999px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+  
+  /* Typography */
+  --font-family-heading: 'Inter', 'Noto Sans JP', sans-serif;
+  --font-family-body: 'Noto Sans JP', sans-serif;
+  
+  --font-size-xs: 0.75rem;   /* 12px */
+  --font-size-sm: 0.875rem;  /* 14px */
+  --font-size-base: 1rem;    /* 16px */
+  --font-size-lg: 1.125rem;  /* 18px */
+  --font-size-xl: 1.25rem;   /* 20px */
+  --font-size-2xl: 1.5rem;   /* 24px */
+  --font-size-3xl: 1.875rem; /* 30px */
+  --font-size-4xl: 2.25rem;  /* 36px */
+  
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+  
+  /* Z-index */
+  --z-base: 1;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-fixed: 30;
+  --z-modal-backdrop: 40;
+  --z-modal: 50;
+  --z-popover: 60;
+  --z-tooltip: 70;
+  
+  /* Max Width */
+  --max-width-container: 1280px;
+}

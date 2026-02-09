@@ -1,0 +1,143 @@
+.detail-page {
+    padding: var(--spacing-2xl) 0;
+    min-height: calc(100vh - 80px);
+}
+
+.detail-content {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Hero Section */
+.detail-hero {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: var(--spacing-2xl);
+    margin-bottom: var(--spacing-3xl);
+    animation: fadeIn var(--transition-slow);
+}
+
+.detail-thumbnail {
+    width: 100%;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+}
+
+.detail-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.detail-title {
+    font-size: var(--font-size-3xl);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+}
+
+.detail-meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+}
+
+.meta-item svg {
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.meta-label {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-light);
+}
+
+.meta-value {
+    font-weight: var(--font-weight-semibold);
+}
+
+.vtuber-name {
+    color: var(--color-primary);
+}
+
+/* Players Section */
+.players-section {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-2xl);
+}
+
+.player-card {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-lg);
+    animation: fadeIn var(--transition-slow);
+}
+
+.player-card:nth-child(2) {
+    animation-delay: 150ms;
+}
+
+.player-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-xl);
+    margin-bottom: var(--spacing-lg);
+    color: var(--color-text);
+}
+
+.player-title svg {
+    color: var(--color-primary);
+}
+
+/* No Spotify State */
+.no-spotify {
+    background: linear-gradient(135deg, rgba(255, 107, 157, 0.05), rgba(197, 107, 255, 0.05));
+}
+
+.no-spotify-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+    text-align: center;
+    padding: var(--spacing-2xl);
+}
+
+.no-spotify-message p {
+    margin: 0;
+    color: var(--color-text-light);
+}
+
+.no-spotify-message .hint {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-light);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .detail-hero {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-lg);
+    }
+
+    .detail-title {
+        font-size: var(--font-size-2xl);
+    }
+
+    .player-card {
+        padding: var(--spacing-lg);
+    }
+}

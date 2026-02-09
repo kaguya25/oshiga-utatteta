@@ -1,0 +1,12 @@
+.spotify-player-container {
+    width: 100%;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--color-bg-dark);
+}
+
+.spotify-iframe {
+    border: none;
+    border-radius: var(--radius-md);
+    display: block;
+}
