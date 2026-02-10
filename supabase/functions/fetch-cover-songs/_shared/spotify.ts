@@ -1,5 +1,5 @@
-import type { SpotifyTrack, SpotifySearchResponse, SpotifyAuthResponse } from '../../../../lib/api-types.ts';
-import { normalizeString } from './parser.ts';
+import type { SpotifyTrack, SpotifySearchResponse, SpotifyAuthResponse } from '../../../../lib/api-types';
+import { normalizeString } from './parser';
 
 /**
  * Spotify Web API クライアント

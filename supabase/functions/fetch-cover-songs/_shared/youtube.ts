@@ -1,4 +1,4 @@
-import type { YouTubeVideo, YouTubeSearchResponse } from '../../../../lib/api-types.ts';
+import type { YouTubeVideo, YouTubeSearchResponse } from '../../../../lib/api-types';
 
 /**
  * YouTube Data API v3 クライアント

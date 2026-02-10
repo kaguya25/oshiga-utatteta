@@ -1,9 +1,9 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { YouTubeClient } from './_shared/youtube.ts';
-import { SpotifyClient } from './_shared/spotify.ts';
-import { parseSongInfo, isCoverSong } from './_shared/parser.ts';
-import type { MonitoredChannel, CoverSongWithSpotify } from '../../../lib/api-types.ts';
+import { YouTubeClient } from './_shared/youtube';
+import { SpotifyClient } from './_shared/spotify';
+import { parseSongInfo, isCoverSong } from './_shared/parser';
+import type { MonitoredChannel, CoverSongWithSpotify } from '../../../lib/api-types';
 
 serve(async (req) => {
     try {

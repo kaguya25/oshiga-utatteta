@@ -36,7 +36,7 @@ export function parseSongInfo(
     }
 
     // パターン6: タイトルに / や - が含まれる場合、前半を曲名、後半をアーティスト名と推測
-    match = title.match(/^(.+?)\s*[/／-−]\s*(.+?)(?:\s*(?:歌ってみた|カバー|cover|COVER))?$/i);
+    match = title.match(/^(.+?)\s*[/／\-−]\s*(.+?)(?:\s*(?:歌ってみた|カバー|cover|COVER))?$/i);
     if (match) {
         const songTitle = match[1].trim();
         let artistName = match[2].trim();
