@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/fetch-cover-songs",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
