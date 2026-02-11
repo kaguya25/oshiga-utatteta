@@ -1,6 +1,9 @@
 # 推しが歌ってた
 
+[![Vercel App](https://therealsujitk-vercel-badge.vercel.app/?app=oshiga-utatteta)](https://oshiga-utatteta.vercel.app)
+
 Vtuberがカバーした楽曲を一覧表示し、YouTubeとSpotifyで聴き比べられるWebアプリケーション
+**Demo:** <https://oshiga-utatteta.vercel.app>
 
 ## 現在の実装状況
 
@@ -17,6 +20,43 @@ Vtuberがカバーした楽曲を一覧表示し、YouTubeとSpotifyで聴き比
 - Supabaseデータベース構築
 - バッチ処理（YouTube API連携）
 - 認証・お気に入り機能
+
+---
+
+## システム構成図
+
+```mermaid
+graph TD
+    User((User))
+    
+    subgraph "Frontend (Vercel)"
+        UI[Next.js App]
+        Player[YouTube/Spotify Player]
+        Store[Zustand Store]
+    end
+    
+    subgraph "Backend / Batch"
+        Cron[Cron Job / API Route]
+    end
+    
+    subgraph "Database (Supabase)"
+        DB[(PostgreSQL)]
+    end
+    
+    subgraph "External Services"
+        YouTube[YouTube Data API]
+        Spotify[Spotify Web API]
+    end
+    
+    User -->|Access| UI
+    UI -->|Fetch Songs| DB
+    UI -->|Persist Playlist| Store
+    UI -->|Playback| Player
+    
+    Cron -->|1. Fetch New Videos| YouTube
+    Cron -->|2. Search Tracks| Spotify
+    Cron -->|3. Save Metadata| DB
+```
 
 ---
 

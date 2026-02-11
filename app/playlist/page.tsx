@@ -1,64 +1,52 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import type { CoverSong } from '@/types';
+import { usePlaylistStore } from '@/lib/store';
+import Link from 'next/link';
 import './page.css';
 
 export default function PlaylistPage() {
-    const [songs, setSongs] = useState<CoverSong[]>([]);
+    const { playlist, removeSong } = usePlaylistStore();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [player, setPlayer] = useState<any>(null);
 
+    // Hydration mismatch回避
+    useEffect(() => {
+        setIsLoading(false);
+    }, []);
+
     // YouTube IFrame APIの読み込み
     useEffect(() => {
-        // YouTube IFrame APIスクリプトを追加
         const tag = document.createElement('script');
         tag.src = 'https://www.youtube.com/iframe_api';
         const firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
 
-        // グローバルコールバック関数を設定
         (window as any).onYouTubeIframeAPIReady = () => {
             console.log('YouTube IFrame API Ready');
         };
     }, []);
 
-    // カバー曲を取得
-    useEffect(() => {
-        async function fetchSongs() {
-            setIsLoading(true);
-            const { data, error } = await supabase
-                .from('cover_songs')
-                .select('*')
-                .order('published_at', { ascending: false });
-
-            if (error) {
-                console.error('データ取得エラー:', error);
-            } else {
-                setSongs(data || []);
-            }
-            setIsLoading(false);
-        }
-
-        fetchSongs();
-    }, []);
-
     // プレイヤーの初期化
     useEffect(() => {
-        if (!songs.length) return;
+        if (!playlist.length || isLoading) return;
 
         const initPlayer = () => {
-            // 既存のプレイヤーを破棄
             if (player) {
                 player.destroy();
+            }
+
+            // 現在の曲が存在するか確認（playlist変更時にindexが範囲外になる可能性）
+            if (!playlist[currentIndex]) {
+                setCurrentIndex(0);
+                return;
             }
 
             const newPlayer = new (window as any).YT.Player('youtube-player', {
                 height: '100%',
                 width: '100%',
-                videoId: songs[currentIndex].youtube_video_id,
+                videoId: playlist[currentIndex].youtube_video_id,
                 playerVars: {
                     autoplay: 1,
                     rel: 0,
@@ -77,7 +65,6 @@ export default function PlaylistPage() {
             });
         };
 
-        // YouTube IFrame APIが読み込まれているか確認
         if ((window as any).YT && (window as any).YT.Player) {
             initPlayer();
         } else {
@@ -89,32 +76,26 @@ export default function PlaylistPage() {
                 player.destroy();
             }
         };
-    }, [songs]);
+    }, [playlist, currentIndex, isLoading]); // player依存を外して無限ループ防止
 
     // 次の曲を再生
     const playNext = () => {
-        const nextIndex = (currentIndex + 1) % songs.length;
+        if (playlist.length === 0) return;
+        const nextIndex = (currentIndex + 1) % playlist.length;
         setCurrentIndex(nextIndex);
-        if (player && player.loadVideoById) {
-            player.loadVideoById(songs[nextIndex].youtube_video_id);
-        }
+        // useEffectが再実行されてプレイヤーが更新される
     };
 
     // 前の曲を再生
     const playPrevious = () => {
-        const prevIndex = (currentIndex - 1 + songs.length) % songs.length;
+        if (playlist.length === 0) return;
+        const prevIndex = (currentIndex - 1 + playlist.length) % playlist.length;
         setCurrentIndex(prevIndex);
-        if (player && player.loadVideoById) {
-            player.loadVideoById(songs[prevIndex].youtube_video_id);
-        }
     };
 
     // 特定の曲を再生
     const playSong = (index: number) => {
         setCurrentIndex(index);
-        if (player && player.loadVideoById) {
-            player.loadVideoById(songs[index].youtube_video_id);
-        }
     };
 
     if (isLoading) {
@@ -130,19 +111,35 @@ export default function PlaylistPage() {
         );
     }
 
-    if (songs.length === 0) {
+    if (playlist.length === 0) {
         return (
             <main className="playlist-page">
                 <div className="container">
                     <div className="empty-state">
-                        <p>カバー曲がまだ登録されていません</p>
+                        <div className="empty-icon">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                <path d="M9 18V5l12-2v13" />
+                                <circle cx="6" cy="18" r="3" />
+                                <circle cx="18" cy="16" r="3" />
+                            </svg>
+                        </div>
+                        <h3>プレイリストは空です</h3>
+                        <p>お気に入りのカバー曲を追加して、自分だけのリストを作りましょう！</p>
+                        <Link href="/" className="btn btn-primary mt-4">
+                            曲を探しに行く
+                        </Link>
                     </div>
                 </div>
             </main>
         );
     }
 
-    const currentSong = songs[currentIndex];
+    const currentSong = playlist[currentIndex];
+
+    // 万が一 currentSong が undefined の場合 (削除直後など)
+    if (!currentSong) {
+        return null;
+    }
 
     return (
         <main className="playlist-page">
@@ -166,28 +163,53 @@ export default function PlaylistPage() {
                             <button
                                 className="btn btn-secondary control-btn"
                                 onClick={playPrevious}
-                                disabled={songs.length <= 1}
+                                disabled={playlist.length <= 1}
                             >
                                 ◀ 前へ
                             </button>
                             <button
                                 className="btn btn-secondary control-btn"
                                 onClick={playNext}
-                                disabled={songs.length <= 1}
+                                disabled={playlist.length <= 1}
                             >
                                 次へ ▶
                             </button>
+                        </div>
+
+                        <div className="share-section mt-md">
+                            <a
+                                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                                    `🎵 Now Playing: ${currentSong.song_title} / ${currentSong.vtuber_name}\n`
+                                )}&url=${encodeURIComponent('https://oshiga-utatteta.vercel.app')}&hashtags=推しが歌ってた,Vtuber`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-sm share-btn"
+                                style={{
+                                    backgroundColor: '#000',
+                                    color: '#fff',
+                                    border: '1px solid #333',
+                                    gap: '8px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    textDecoration: 'none'
+                                }}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                                </svg>
+                                Xでシェア
+                            </a>
                         </div>
                     </div>
 
                     {/* プレイリスト */}
                     <div className="playlist-section">
                         <h2 className="playlist-section-title">
-                            プレイリスト ({songs.length}件)
+                            リスト ({playlist.length}件)
                         </h2>
 
                         <div className="playlist-items">
-                            {songs.map((song, index) => {
+                            {playlist.map((song, index) => {
                                 const isActive = index === currentIndex;
                                 const formattedDate = new Date(song.published_at).toLocaleDateString('ja-JP', {
                                     year: 'numeric',
@@ -204,14 +226,29 @@ export default function PlaylistPage() {
                                         <div className="playlist-item-number">
                                             {isActive ? '▶' : index + 1}
                                         </div>
+                                        <div className="playlist-item-thumbnail">
+                                            <img src={song.thumbnail_url} alt="" />
+                                        </div>
                                         <div className="playlist-item-content">
                                             <div className="playlist-item-title">{song.song_title}</div>
                                             <div className="playlist-item-meta">
                                                 <span className="playlist-item-vtuber">{song.vtuber_name}</span>
-                                                <span className="playlist-item-separator">•</span>
-                                                <span className="playlist-item-date">{formattedDate}</span>
+                                                <span className="playlist-item-artist"> / {song.artist_name}</span>
                                             </div>
                                         </div>
+                                        <button
+                                            className="playlist-item-remove"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                removeSong(song.id);
+                                            }}
+                                            title="削除"
+                                        >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            </svg>
+                                        </button>
                                     </div>
                                 );
                             })}

@@ -70,6 +70,27 @@
     color: var(--color-primary);
 }
 
+.share-btn-detail {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #000;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    width: fit-content;
+    transition: transform 0.2s, opacity 0.2s;
+    margin-top: var(--spacing-sm);
+}
+
+.share-btn-detail:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+}
+
 /* Players Section */
 .players-section {
     display: grid;

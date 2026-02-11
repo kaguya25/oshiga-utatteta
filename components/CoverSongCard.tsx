@@ -1,5 +1,8 @@
+'use client';
+
 import Link from 'next/link';
 import { CoverSong } from '@/types';
+import { usePlaylistStore } from '@/lib/store';
 import './CoverSongCard.css';
 
 interface CoverSongCardProps {
@@ -13,6 +16,20 @@ export default function CoverSongCard({ song }: CoverSongCardProps) {
         day: 'numeric'
     });
 
+    const { addSong, removeSong, isInPlaylist: checkInPlaylist } = usePlaylistStore();
+    const isInPlaylist = checkInPlaylist(song.id);
+
+    const handlePlaylistClick = (e: React.MouseEvent) => {
+        e.preventDefault(); // リンク遷移を防ぐ
+        e.stopPropagation();
+
+        if (isInPlaylist) {
+            removeSong(song.id);
+        } else {
+            addSong(song);
+        }
+    };
+
     return (
         <Link href={`/cover/${song.id}`} className="cover-card-link">
             <article className="cover-card">
@@ -22,6 +39,21 @@ export default function CoverSongCard({ song }: CoverSongCardProps) {
                         alt={`${song.vtuber_name} - ${song.song_title}`}
                         className="cover-card-image"
                     />
+                    <button
+                        className={`playlist-add-btn ${isInPlaylist ? 'added' : ''}`}
+                        onClick={handlePlaylistClick}
+                        title={isInPlaylist ? 'プレイリストから削除' : 'プレイリストに追加'}
+                    >
+                        {isInPlaylist ? (
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                            </svg>
+                        ) : (
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                            </svg>
+                        )}
+                    </button>
                     {song.spotify_track_id && (
                         <div className="spotify-badge">
                             <svg
