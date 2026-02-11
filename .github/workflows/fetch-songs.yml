@@ -1,0 +1,28 @@
+name: Fetch Cover Songs
+
+on:
+  schedule:
+    # 日本時間9時 = UTC 0時
+    - cron: '0 0 * * *'
+    # 日本時間19時 = UTC 10時
+    - cron: '0 10 * * *'
+    # 日本時間21時 = UTC 12時
+    - cron: '0 12 * * *'
+    # 日本時間23時 = UTC 14時
+    - cron: '0 14 * * *'
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  fetch-songs:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Call Vercel API to fetch cover songs
+        run: |
+          curl -X GET "${{ secrets.CRON_URL }}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -v
+        continue-on-error: false
+      
+      - name: Log completion
+        run: echo "Cover songs fetch completed at $(date)"
