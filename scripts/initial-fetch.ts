@@ -1,37 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-export const runtime = 'edge';
-export const maxDuration = 300; // 5分
-
 /**
- * GitHub Actionsから呼び出されるCron APIルート
- * バッチ処理を直接実行する
+ * 初回一括取得スクリプト（ローカル実行用）
+ * 
+ * 使い方:
+ * npm run initial-fetch
+ * 
+ * または
+ * npx tsx scripts/initial-fetch.ts
  */
-export async function GET(request: NextRequest) {
+
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// .env.localファイルを明示的に読み込む
+dotenv.config({ path: path.join(process.cwd(), '.env.local') });
+
+// 環境変数の取得
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const youtubeApiKey = process.env.YOUTUBE_API_KEY!;
+const spotifyClientId = process.env.SPOTIFY_CLIENT_ID;
+const spotifyClientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+
+// 取得日数の設定（デフォルト30日、引数で変更可能）
+const fetchDays = parseInt(process.argv[2] || '30');
+
+console.log(`=== 初回一括取得スクリプト ===`);
+console.log(`取得期間: 過去 ${fetchDays} 日間`);
+console.log(`開始時刻: ${new Date().toLocaleString('ja-JP')}`);
+console.log('');
+
+// Supabaseクライアントの初期化
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+async function main() {
     try {
-        // 認証チェック
-        const authHeader = request.headers.get('authorization');
-        if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        console.log('Cron job triggered, starting batch process...');
-
-        // 環境変数の取得
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-        const youtubeApiKey = process.env.YOUTUBE_API_KEY!;
-        const spotifyClientId = process.env.SPOTIFY_CLIENT_ID;
-        const spotifyClientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-        const fetchDays = parseInt(process.env.FETCH_DAYS || '1'); // デフォルト1日
-
-        console.log(`Fetch period: ${fetchDays} days`);
-
-        // Supabaseクライアントの初期化
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
         // 監視対象チャンネルの取得
+        console.log('📡 監視対象チャンネルを取得中...');
         const { data: channels, error: channelsError } = await supabase
             .from('monitored_channels')
             .select('*')
@@ -42,42 +47,52 @@ export async function GET(request: NextRequest) {
         }
 
         if (!channels || channels.length === 0) {
-            console.log('No active monitored channels found.');
-            return NextResponse.json({ message: 'No active channels to process' });
+            console.log('⚠️  監視対象チャンネルが見つかりませんでした');
+            return;
         }
 
-        console.log(`Found ${channels.length} active channels to monitor`);
+        console.log(`✅ ${channels.length}個のチャンネルを発見`);
+        console.log('');
 
-        let processedCount = 0;
-        let savedCount = 0;
-        let errorCount = 0;
+        let totalVideosProcessed = 0;
+        let totalSongsSaved = 0;
+        let totalErrors = 0;
+
+        // デバッグフィルタ解除: 全チャンネル対象
+        const targetChannels = channels;
+        // console.log(`✅ ${targetChannels.length}個のチャンネルを処理します (Debug Mode)`);
 
         // 各チャンネルの動画を取得して処理
-        for (const channel of channels) {
-            try {
-                console.log(`Processing channel: ${channel.channel_name} (${channel.channel_id})`);
+        for (let i = 0; i < targetChannels.length; i++) {
+            const channel = targetChannels[i];
+            console.log(`[${i + 1}/${targetChannels.length}] 処理中: ${channel.channel_name} (ID: ${channel.channel_id})`);
 
-                // YouTube から最新動画を取得（期間指定）
+            try {
+                // YouTube から動画を取得
                 const videos = await getRecentVideos(youtubeApiKey, channel.channel_id, 50, fetchDays);
-                console.log(`Found ${videos.length} recent videos from ${channel.channel_name}`);
+                console.log(`  📹 ${videos.length}件の動画を取得`);
 
                 // カバー曲のみをフィルタリング → 「攻め」の設定：全動画をパース対象にする！
                 const coverVideos = videos;
-                console.log(`${coverVideos.length} videos to process (Aggressive Mode)`);
+                console.log(`  🎵 ${coverVideos.length}件の動画をパース対象として処理（攻めの設定）`);
+
+                let savedCount = 0;
+                let errorCount = 0;
 
                 for (const video of coverVideos) {
                     try {
-                        processedCount++;
+                        totalVideosProcessed++;
 
+                        // 楽曲情報を抽出
                         // 楽曲情報を抽出
                         const { songTitle, artistName } = parseSongInfo(video.title, video.description, channel.channel_name);
 
                         if (!songTitle || !artistName) {
-                            console.log(`Could not parse song info from: ${video.title}`);
+                            console.log(`  ⚠️  パース失敗: ${video.title}`);
                             continue;
                         }
 
-                        // Spotify でマッチング (if credentials exist)
+                        // Spotify でマッチング
                         let spotifyTrackId = null;
                         let spotifyTrackUrl = null;
 
@@ -94,7 +109,7 @@ export async function GET(request: NextRequest) {
                             }
                         }
 
-                        // Supabase に保存（upsert）
+                        // Supabase に保存
                         const { error: insertError } = await supabase
                             .from('cover_songs')
                             .upsert(
@@ -115,47 +130,46 @@ export async function GET(request: NextRequest) {
                             );
 
                         if (insertError) {
-                            console.error(`Failed to save cover song ${video.id}:`, insertError);
+                            console.log(`  ❌ 保存失敗: ${video.id} - ${insertError.message}`);
                             errorCount++;
                         } else {
-                            console.log(`Saved: ${songTitle} / ${artistName} (Spotify: ${spotifyTrackId ? 'matched' : 'not found'})`);
+                            console.log(`  ✅ 保存成功: ${songTitle} / ${artistName}`);
                             savedCount++;
                         }
                     } catch (videoError) {
-                        console.error(`Error processing video ${video.id}:`, videoError);
+                        console.log(`  ❌ エラー: ${video.id} - ${videoError}`);
                         errorCount++;
                     }
                 }
+
+                totalSongsSaved += savedCount;
+                totalErrors += errorCount;
+
+                console.log(`  📊 結果: 保存 ${savedCount}件, エラー ${errorCount}件`);
+                console.log('');
             } catch (channelError) {
-                console.error(`Error processing channel ${channel.channel_name}:`, channelError);
-                errorCount++;
-                continue;
+                console.log(`  ❌ チャンネルエラー: ${channelError}`);
+                totalErrors++;
             }
         }
 
-        const summary = {
-            message: 'Batch process completed',
-            channelsProcessed: channels.length,
-            videosProcessed: processedCount,
-            songsSaved: savedCount,
-            errors: errorCount,
-        };
-
-        console.log('Batch process summary:', summary);
-
-        return NextResponse.json(summary);
+        // 最終結果
+        console.log('');
+        console.log('=== 完了 ===');
+        console.log(`処理チャンネル数: ${channels.length}`);
+        console.log(`処理動画数: ${totalVideosProcessed}`);
+        console.log(`保存曲数: ${totalSongsSaved}`);
+        console.log(`エラー数: ${totalErrors}`);
+        console.log(`終了時刻: ${new Date().toLocaleString('ja-JP')}`);
     } catch (error) {
-        console.error('Cron job error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
-            { status: 500 }
-        );
+        console.error('❌ スクリプトエラー:', error);
+        process.exit(1);
     }
 }
 
 // === Helper Functions ===
 
-async function getRecentVideos(apiKey: string, channelId: string, maxResults: number = 50, daysToFetch: number = 1) {
+async function getRecentVideos(apiKey: string, channelId: string, maxResults: number = 50, daysToFetch: number = 30) {
     const publishedAfter = new Date(Date.now() - daysToFetch * 24 * 60 * 60 * 1000).toISOString();
 
     const url = new URL('https://www.googleapis.com/youtube/v3/search');
@@ -168,6 +182,8 @@ async function getRecentVideos(apiKey: string, channelId: string, maxResults: nu
     url.searchParams.set('order', 'date'); // 日付順に取得
     url.searchParams.set('key', apiKey);
 
+    // ... (debug URL log can be removed or kept commented)
+
     const response = await fetch(url.toString());
 
     if (!response.ok) {
@@ -176,6 +192,7 @@ async function getRecentVideos(apiKey: string, channelId: string, maxResults: nu
     }
 
     const data = await response.json();
+    console.log(`  🔍 Search API returned ${data.items?.length || 0} items for ${channelId}`);
 
     let videos = data.items.map((item: any) => ({
         id: item.id.videoId,
@@ -192,15 +209,12 @@ async function getRecentVideos(apiKey: string, channelId: string, maxResults: nu
     }));
 
     // 公開日でフィルタリング (APIのpublishedAfterの代わり)
-    const thresholdDate = new Date(publishedAfter);
+    const thresholdDate = new Date(publishedAfter); // publishedAfterはgetRecentVideos冒頭で定義済み
     videos = videos.filter((v: any) => new Date(v.publishedAt) >= thresholdDate);
+    console.log(`  📅 ${videos.length} videos remaining after date filtering`);
 
     // 動画の詳細情報を取得してShortsを除外
     const videoIds = videos.map((v: any) => v.id).join(',');
-
-    // APIクォータ節約のため、動画がない場合はここで終了
-    if (videoIds.length === 0) return [];
-
     const detailsUrl = new URL('https://www.googleapis.com/youtube/v3/videos');
     detailsUrl.searchParams.set('part', 'contentDetails');
     detailsUrl.searchParams.set('id', videoIds);
@@ -259,19 +273,19 @@ function parseSongInfo(
         return { songTitle: match[1].trim(), artistName: match[2].trim() };
     }
 
-    // パターン2: 曲名 / アーティスト【歌ってみた】
+    // パターン2: 曲名 / アーティスト名【歌ってみた】
     match = title.match(/^(.+?)\s*[/／]\s*(.+?)\s*【(?:歌ってみた|カバー|cover|COVER)】/);
     if (match) {
         return { songTitle: match[1].trim(), artistName: match[2].trim() };
     }
 
-    // パターン3: 曲名 - アーティスト cover
+    // パターン3: 曲名 - アーティスト名 cover
     match = title.match(/^(.+?)\s*[-−]\s*(.+?)\s*(?:cover|カバー|COVER)/i);
     if (match) {
         return { songTitle: match[1].trim(), artistName: match[2].trim() };
     }
 
-    // パターン4: 【カバー】曲名（アーティスト名）
+    // パターン4: 【歌ってみた】曲名（アーティスト名）
     match = title.match(/【(?:歌ってみた|カバー|cover|COVER)】(.+?)(?:（|[(])(.+?)(?:）|[)])/);
     if (match) {
         return { songTitle: match[1].trim(), artistName: match[2].trim() };
@@ -283,7 +297,9 @@ function parseSongInfo(
         return { songTitle: match[1].trim(), artistName: match[2].trim() };
     }
 
-    // パターン6: 【歌ってみた】曲名【VTuber名】
+    // パターン6: 【歌ってみた】曲名【VTuber名】（オリジナル曲の場合もあるため、慎重に）
+    // 例: 【歌ってみた】ずうっといっしょ！【ヒメヒナ】
+    // この場合、descriptionから情報を抽出するか、曲名のみ保存
     match = title.match(/【(?:歌ってみた|カバー|cover|COVER)】(.+?)【(.+?)】/);
     if (match) {
         const potentialSongTitle = match[1].trim();
@@ -296,10 +312,11 @@ function parseSongInfo(
         }
 
         // descriptionに情報がない場合、VTuber名をアーティストとして扱わない
+        // (オリジナル曲の可能性が高いためスキップ)
         return { songTitle: null, artistName: null };
     }
 
-    // パターン7: タイトルに / や - が含まれる場合
+    // パターン7: 曲名 / アーティスト名 (【】なし)
     match = title.match(/^(.+?)\s*[/／\-−]\s*(.+?)(?:\s*(?:歌ってみた|カバー|cover|COVER))?$/i);
     if (match) {
         let songTitle = match[1].trim();
@@ -308,9 +325,13 @@ function parseSongInfo(
 
         // 攻めの設定: 曲名がチャンネル名と一致する場合、逆（アーティスト / 曲名）である可能性が高いので入れ替える
         if (channelName && songTitle.toLowerCase().includes(channelName.toLowerCase())) {
+            console.log(`  🔄 スワップ発生: ${songTitle} <-> ${artistName} (Channel: ${channelName})`);
             const temp = songTitle;
             songTitle = artistName;
             artistName = temp;
+        } else {
+            // ログが多すぎる場合はコメントアウト
+            // console.log(`  ℹ️  スワップ判定: Title='${songTitle}', Channel='${channelName}' -> Match? ${songTitle.toLowerCase().includes(channelName.toLowerCase())}`);
         }
 
         if (songTitle && artistName) {
@@ -324,17 +345,24 @@ function parseSongInfo(
         const potentialSongTitle = match[2].trim();
         const potentialVtuberName = match[1] ? match[1].trim() : null;
 
+        // descriptionから "Original:" や "作詞・作曲:" などを探す
         const descMatch = description.match(/(?:original|作詞[・･]作曲|歌|アーティスト|本家)[：:]\s*(.+?)(?:\n|$)/i);
         if (descMatch) {
             return { songTitle: potentialSongTitle, artistName: descMatch[1].trim() };
         }
 
+        // descriptionに情報がない場合、タイトル冒頭のVtuber名をフォールバックとして使用
         if (potentialVtuberName) {
             return { songTitle: potentialSongTitle, artistName: potentialVtuberName };
         }
     }
 
     return { songTitle: null, artistName: null };
+}
+
+function isCoverSong(title: string): boolean {
+    const coverKeywords = ['歌ってみた', 'カバー', 'COVER', 'cover', 'Cover'];
+    return coverKeywords.some(keyword => title.includes(keyword));
 }
 
 function normalizeString(str: string): string {
@@ -355,7 +383,7 @@ async function getSpotifyAccessToken(clientId: string, clientSecret: string): Pr
         return spotifyAccessToken;
     }
 
-    const credentials = btoa(`${clientId}:${clientSecret}`);
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
     const response = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
@@ -408,13 +436,15 @@ async function searchSpotifyTrack(
         const data = await response.json();
 
         if (data.tracks.items.length === 0) {
-            console.log(`No Spotify match found for: ${songTitle} / ${artistName}`);
             return null;
         }
 
         return data.tracks.items[0];
     } catch (error) {
-        console.error(`Failed to search Spotify for ${songTitle} / ${artistName}:`, error);
+        console.log(`  ⚠️  Spotify検索失敗: ${songTitle} / ${artistName}`);
         return null;
     }
 }
+
+// スクリプト実行
+main();

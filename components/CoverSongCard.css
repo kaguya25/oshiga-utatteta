@@ -1,31 +1,37 @@
 .cover-card-link {
     text-decoration: none;
     color: inherit;
+    display: block;
+    height: 100%;
+    min-width: 0;
+    /* Prevent grid blowout */
 }
 
 .cover-card {
-    background: var(--color-surface);
-    border-radius: var(--radius-lg);
+    background: #ffffff;
+    border-radius: 12px;
     overflow: hidden;
-    box-shadow: var(--shadow-md);
-    transition: all var(--transition-base);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
     height: 100%;
     display: flex;
     flex-direction: column;
 }
 
 .cover-card:hover {
-    transform: translateY(-6px);
-    box-shadow: var(--shadow-xl);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .cover-card-thumbnail {
     position: relative;
     width: 100%;
     padding-top: 56.25%;
-    /* 16:9 aspect ratio */
+    /* 16:9 Aspect Ratio (9 / 16 * 100) - Most robust method */
+    background-color: #f3f4f6;
     overflow: hidden;
-    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
 }
 
 .cover-card-image {
@@ -35,7 +41,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform var(--transition-slow);
+    transition: transform 0.3s;
 }
 
 .cover-card:hover .cover-card-image {
@@ -44,84 +50,93 @@
 
 .spotify-badge {
     position: absolute;
-    top: var(--spacing-sm);
-    right: var(--spacing-sm);
-    background: #1DB954;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(30, 215, 96, 0.9);
     color: white;
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-full);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: var(--shadow-md);
-    animation: pulse 2s ease-in-out infinite;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-@keyframes pulse {
+.playlist-add-btn {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: all 0.2s ease;
+    z-index: 10;
+}
 
-    0%,
-    100% {
-        opacity: 1;
-    }
+.playlist-add-btn:hover {
+    background: rgba(255, 62, 165, 0.9);
+    transform: scale(1.1);
+}
 
-    50% {
-        opacity: 0.7;
-    }
+.playlist-add-btn.added {
+    background: rgba(255, 62, 165, 0.9);
 }
 
 .cover-card-content {
-    padding: var(--spacing-md);
+    padding: 16px;
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
 }
 
 .cover-card-title {
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text);
-    margin: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-bottom: 8px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-    line-height: 1.4;
+    overflow: hidden;
+    color: #1f2937;
 }
 
 .cover-card-info {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
+    margin-top: auto;
 }
 
 .cover-card-vtuber,
 .cover-card-artist {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-light);
     display: flex;
     align-items: center;
-    gap: var(--spacing-xs);
-    margin: 0;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: #4b5563;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.cover-card-vtuber {
-    color: var(--color-primary);
-    font-weight: var(--font-weight-medium);
+.cover-card-vtuber svg,
+.cover-card-artist svg {
+    color: #9ca3af;
+    flex-shrink: 0;
 }
 
 .cover-card-date {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-light);
-    margin: 0;
-    margin-top: auto;
-}
-
-/* Responsive */
-@media (max-width: 640px) {
-    .cover-card-title {
-        font-size: var(--font-size-base);
-    }
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    text-align: right;
 }
