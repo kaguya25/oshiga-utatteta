@@ -24,6 +24,9 @@ export async function GET(request: NextRequest) {
         const youtubeApiKey = process.env.YOUTUBE_API_KEY!;
         const spotifyClientId = process.env.SPOTIFY_CLIENT_ID;
         const spotifyClientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+        const fetchDays = parseInt(process.env.FETCH_DAYS || '1'); // デフォルト1日
+
+        console.log(`Fetch period: ${fetchDays} days`);
 
         // Supabaseクライアントの初期化
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -54,8 +57,8 @@ export async function GET(request: NextRequest) {
             try {
                 console.log(`Processing channel: ${channel.channel_name} (${channel.channel_id})`);
 
-                // YouTube から最新動画を取得
-                const videos = await getRecentVideos(youtubeApiKey, channel.channel_id);
+                // YouTube から最新動画を取得（期間指定）
+                const videos = await getRecentVideos(youtubeApiKey, channel.channel_id, 50, fetchDays);
                 console.log(`Found ${videos.length} recent videos from ${channel.channel_name}`);
 
                 // カバー曲のみをフィルタリング
@@ -152,8 +155,8 @@ export async function GET(request: NextRequest) {
 
 // === Helper Functions ===
 
-async function getRecentVideos(apiKey: string, channelId: string, maxResults: number = 50) {
-    const publishedAfter = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+async function getRecentVideos(apiKey: string, channelId: string, maxResults: number = 50, daysToFetch: number = 1) {
+    const publishedAfter = new Date(Date.now() - daysToFetch * 24 * 60 * 60 * 1000).toISOString();
 
     const url = new URL('https://www.googleapis.com/youtube/v3/search');
     url.searchParams.set('part', 'snippet');
