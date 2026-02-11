@@ -65,7 +65,7 @@ npm run dev
 
 Supabaseのダッシュボードで、以下のSQLを実行してテーブルを作成してください：
 
-\`\`\`sql
+```sql
 -- cover_songs テーブル
 CREATE TABLE cover_songs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -119,13 +119,13 @@ CREATE POLICY "Allow public read access" ON cover_songs
 -- monitored_channels: 誰でも閲覧可能
 CREATE POLICY "Allow public read access" ON monitored_channels
   FOR SELECT USING (true);
-\`\`\`
+```
 
 ### テストデータの投入（動作確認用）
 
 動作確認のため、いくつかサンプルデータを入れてみてください：
 
-\`\`\`sql
+```sql
 INSERT INTO cover_songs (
   youtube_video_id,
   vtuber_name,
@@ -149,7 +149,7 @@ INSERT INTO cover_songs (
   '4PTG3ovr5Q0',
   '<https://open.spotify.com/track/4PTG3ovr5Q0>'
 );
-\`\`\`
+```
 
 ---
 
@@ -167,7 +167,7 @@ INSERT INTO cover_songs (
 
 ## プロジェクト構成
 
-\`\`\`
+```
 oshiga-utatteta/
 ├── app/
 │   ├── layout.tsx           # ルートレイアウト
@@ -198,7 +198,7 @@ oshiga-utatteta/
 │   └── variables.css        # CSS変数
 ├── .env.local               # 環境変数
 └── package.json
-\`\`\`
+```
 
 ---
 
