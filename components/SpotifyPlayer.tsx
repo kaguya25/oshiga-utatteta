@@ -1,10 +1,18 @@
 import './SpotifyPlayer.css';
+import { useSession } from 'next-auth/react';
+import SpotifyWebPlayer from './SpotifyWebPlayer';
 
 interface SpotifyPlayerProps {
     trackId: string;
 }
 
 export default function SpotifyPlayer({ trackId }: SpotifyPlayerProps) {
+    const { data: session } = useSession();
+
+    if (session) {
+        return <SpotifyWebPlayer trackId={trackId} />;
+    }
+
     return (
         <div className="spotify-player-container">
             <iframe

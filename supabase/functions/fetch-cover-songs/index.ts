@@ -65,7 +65,7 @@ serve(async (req) => {
                         processedCount++;
 
                         // 楽曲情報を抽出
-                        const { songTitle, artistName } = parseSongInfo(video.title, video.description);
+                        const { songTitle, artistName } = parseSongInfo(video.title, video.description, channel.channel_name);
 
                         if (!songTitle || !artistName) {
                             console.log(`Could not parse song info from: ${video.title}`);

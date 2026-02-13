@@ -52,16 +52,40 @@ export default function Header() {
                                 {playlist.length}
                             </span>
                         </Link>
-                        {/* TODO: 認証機能実装後に有効化 */}
-                        {/* <Link href="/my-favorites" className="nav-link">
-              お気に入り
-            </Link>
-            <button className="btn btn-primary btn-sm">
-              ログイン
-            </button> */}
+                        <AuthButtons />
                     </nav>
                 </div>
             </div>
         </header>
+    );
+}
+
+import { signIn, signOut, useSession } from "next-auth/react";
+
+function AuthButtons() {
+    const { data: session } = useSession();
+
+    if (session) {
+        return (
+            <div className="auth-container" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '0.8rem', color: '#aaa' }}>{session.user?.name}</span>
+                <button
+                    onClick={() => signOut()}
+                    className="btn btn-sm btn-outline"
+                    style={{ fontSize: '0.8rem', padding: '4px 8px' }}
+                >
+                    ログアウト
+                </button>
+            </div>
+        );
+    }
+    return (
+        <button
+            onClick={() => signIn('spotify')}
+            className="btn btn-primary btn-sm"
+            style={{ fontSize: '0.8rem' }}
+        >
+            Spotify連携
+        </button>
     );
 }

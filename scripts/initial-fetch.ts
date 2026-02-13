@@ -58,8 +58,13 @@ async function main() {
         let totalSongsSaved = 0;
         let totalErrors = 0;
 
-        // デバッグフィルタ解除: 全チャンネル対象
-        const targetChannels = channels;
+        // デバッグフィルタ解除: 全チャンネル対象 (引数で特定チャンネル指定可能にする)
+        let targetChannels = channels;
+        const targetChannelId = process.argv[3];
+        if (targetChannelId) {
+            console.log(`🎯 特定チャンネルのみ処理します: ${targetChannelId}`);
+            targetChannels = channels.filter(c => c.channel_id === targetChannelId);
+        }
         // console.log(`✅ ${targetChannels.length}個のチャンネルを処理します (Debug Mode)`);
 
         // 各チャンネルの動画を取得して処理
@@ -84,7 +89,9 @@ async function main() {
                         totalVideosProcessed++;
 
                         // 楽曲情報を抽出
-                        // 楽曲情報を抽出
+                        if (channel.channel_name.includes('KMNZ') || channel.channel_id === 'UCmIOAPFHRsZplaQhzygaN4g') {
+                            // KMNZ specific parsing logging if needed
+                        }
                         const { songTitle, artistName } = parseSongInfo(video.title, video.description, channel.channel_name);
 
                         if (!songTitle || !artistName) {
@@ -171,81 +178,129 @@ async function main() {
 
 async function getRecentVideos(apiKey: string, channelId: string, maxResults: number = 50, daysToFetch: number = 30) {
     const publishedAfter = new Date(Date.now() - daysToFetch * 24 * 60 * 60 * 1000).toISOString();
+    const thresholdDate = new Date(publishedAfter);
 
-    const url = new URL('https://www.googleapis.com/youtube/v3/search');
-    url.searchParams.set('part', 'snippet');
-    url.searchParams.set('channelId', channelId);
-    url.searchParams.set('order', 'date');
-    url.searchParams.set('type', 'video');
-    // url.searchParams.set('publishedAfter', publishedAfter); // API側のフィルタは不安定なので使用しない
-    url.searchParams.set('maxResults', maxResults.toString());
-    url.searchParams.set('order', 'date'); // 日付順に取得
-    url.searchParams.set('key', apiKey);
+    let allVideos: any[] = [];
+    let nextPageToken: string | null = null;
+    let shouldContinue = true;
 
-    // ... (debug URL log can be removed or kept commented)
+    console.log(`  🔍 Fetching videos for channel ${channelId} since ${publishedAfter}...`);
 
-    const response = await fetch(url.toString());
+    while (shouldContinue) {
+        const url = new URL('https://www.googleapis.com/youtube/v3/search');
+        url.searchParams.set('part', 'snippet');
+        url.searchParams.set('channelId', channelId);
+        url.searchParams.set('order', 'date');
+        url.searchParams.set('type', 'video');
+        url.searchParams.set('maxResults', '50'); // Max per page
+        url.searchParams.set('key', apiKey);
 
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(`YouTube API Error: ${error.error?.message || response.statusText}`);
+        if (nextPageToken) {
+            url.searchParams.set('pageToken', nextPageToken);
+        }
+
+        const response = await fetch(url.toString());
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(`YouTube API Error: ${error.error?.message || response.statusText}`);
+        }
+
+        const data = await response.json();
+        const items = data.items || [];
+
+        if (items.length === 0) {
+            break;
+        }
+
+        const videos = items.map((item: any) => ({
+            id: item.id.videoId,
+            title: item.snippet.title,
+            description: item.snippet.description,
+            thumbnailUrl:
+                item.snippet.thumbnails.maxresdefault?.url ||
+                item.snippet.thumbnails.high?.url ||
+                item.snippet.thumbnails.medium?.url ||
+                '',
+            publishedAt: item.snippet.publishedAt,
+            channelId: item.snippet.channelId,
+            channelTitle: item.snippet.channelTitle,
+        }));
+
+        // Filter by date
+        const validVideos = videos.filter((v: any) => new Date(v.publishedAt) >= thresholdDate);
+        allVideos = [...allVideos, ...validVideos];
+
+        // Ensure we stop if we've gone past the date limit
+        // Since we order by date (descending), the last item is the oldest.
+        const lastVideo = videos[videos.length - 1];
+        if (new Date(lastVideo.publishedAt) < thresholdDate) {
+            shouldContinue = false;
+        }
+
+        nextPageToken = data.nextPageToken;
+        if (!nextPageToken) {
+            shouldContinue = false;
+        }
+
+        // Safety break to avoid infinite loops if something goes wrong
+        if (allVideos.length > 2000) {
+            console.log(`  ⚠️ Limit reached (2000 videos), stopping fetch for this channel.`);
+            shouldContinue = false;
+        }
+
+        // API Quota observation: sleep a bit? 
+        // await new Promise(r => setTimeout(r, 100)); 
     }
 
-    const data = await response.json();
-    console.log(`  🔍 Search API returned ${data.items?.length || 0} items for ${channelId}`);
+    console.log(`  📦 Total ${allVideos.length} videos found within date range.`);
 
-    let videos = data.items.map((item: any) => ({
-        id: item.id.videoId,
-        title: item.snippet.title,
-        description: item.snippet.description,
-        thumbnailUrl:
-            item.snippet.thumbnails.maxresdefault?.url ||
-            item.snippet.thumbnails.high?.url ||
-            item.snippet.thumbnails.medium?.url ||
-            '',
-        publishedAt: item.snippet.publishedAt,
-        channelId: item.snippet.channelId,
-        channelTitle: item.snippet.channelTitle,
-    }));
+    if (allVideos.length === 0) return [];
 
-    // 公開日でフィルタリング (APIのpublishedAfterの代わり)
-    const thresholdDate = new Date(publishedAfter); // publishedAfterはgetRecentVideos冒頭で定義済み
-    videos = videos.filter((v: any) => new Date(v.publishedAt) >= thresholdDate);
-    console.log(`  📅 ${videos.length} videos remaining after date filtering`);
+    // Fetch Content Details for duration (in batches of 50)
+    // Shorts filtering
+    const validConfiguredVideos = [];
 
-    // 動画の詳細情報を取得してShortsを除外
-    const videoIds = videos.map((v: any) => v.id).join(',');
-    const detailsUrl = new URL('https://www.googleapis.com/youtube/v3/videos');
-    detailsUrl.searchParams.set('part', 'contentDetails');
-    detailsUrl.searchParams.set('id', videoIds);
-    detailsUrl.searchParams.set('key', apiKey);
+    // Chunk video IDs for contentDetails request
+    const chunkSize = 50;
+    for (let i = 0; i < allVideos.length; i += chunkSize) {
+        const chunk = allVideos.slice(i, i + chunkSize);
+        const videoIds = chunk.map((v: any) => v.id).join(',');
 
-    const detailsResponse = await fetch(detailsUrl.toString());
-    if (!detailsResponse.ok) {
-        const error = await detailsResponse.json();
-        throw new Error(`YouTube API Error: ${error.error?.message || detailsResponse.statusText}`);
-    }
+        const detailsUrl = new URL('https://www.googleapis.com/youtube/v3/videos');
+        detailsUrl.searchParams.set('part', 'contentDetails');
+        detailsUrl.searchParams.set('id', videoIds);
+        detailsUrl.searchParams.set('key', apiKey);
 
-    const detailsData = await detailsResponse.json();
+        const detailsResponse = await fetch(detailsUrl.toString());
+        if (!detailsResponse.ok) {
+            console.error(`  ❌ Failed to fetch video details for chunk ${i}, skipping...`);
+            continue;
+        }
 
-    // durationをパースしてShortsを除外（60秒以下）
-    const videoDetailsMap = new Map();
-    for (const item of detailsData.items) {
-        if (item.contentDetails && item.contentDetails.duration) {
-            const duration = parseDuration(item.contentDetails.duration);
-            videoDetailsMap.set(item.id, duration);
+        const detailsData = await detailsResponse.json();
+        const videoDetailsMap = new Map();
+
+        for (const item of detailsData.items) {
+            if (item.contentDetails && item.contentDetails.duration) {
+                const duration = parseDuration(item.contentDetails.duration);
+                videoDetailsMap.set(item.id, duration);
+            }
+        }
+
+        // Filter current chunk
+        for (const video of chunk) {
+            if (video.channelId !== channelId) continue;
+            const duration = videoDetailsMap.get(video.id);
+            if (duration && duration > 30) {
+                validConfiguredVideos.push(video);
+            } else {
+                // console.log(`  ℹ️  Skipped due to duration: ${video.id} (${duration}s)`);
+            }
         }
     }
 
-    // Shorts（60秒以下）を除外、かつChannel IDが一致するもののみ（他人の動画混入防止）
-    return videos.filter((video: any) => {
-        if (video.channelId !== channelId) {
-            console.log(`  ⚠️ Skipping video from different channel: ${video.title} (Channel: ${video.channelTitle}, ID: ${video.channelId})`);
-            return false;
-        }
-        const duration = videoDetailsMap.get(video.id);
-        return duration && duration > 60;
-    });
+    return validConfiguredVideos;
 }
 
 // ISO 8601 duration形式（PT1M30Sなど）を秒数に変換
@@ -267,8 +322,22 @@ function parseSongInfo(
     description: string = "",
     channelName: string = ""
 ): { songTitle: string | null; artistName: string | null } {
+    // HTMLエンティティのデコード
+    title = title.replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'");
+
     // パターン1: 【歌ってみた】曲名 / アーティスト名
     let match = title.match(/【(?:歌ってみた|カバー|cover|COVER)】(.+?)\s*[/／]\s*(.+?)(?:【|$)/);
+    if (match) {
+        return { songTitle: match[1].trim(), artistName: match[2].trim() };
+    }
+
+    // パターン9 (KMNZ style): 曲名 - アーティスト名 (Cover) / VTuber名
+    // 例: COZMIC TRAVEL - SOUL'd OUT(Cover) / KMNZ LITA
+    match = title.match(/^(.+?)\s*[-−]\s*(.+?)\s*[\(（]Cover[\)）]\s*[/／]/i);
     if (match) {
         return { songTitle: match[1].trim(), artistName: match[2].trim() };
     }
@@ -299,20 +368,15 @@ function parseSongInfo(
 
     // パターン6: 【歌ってみた】曲名【VTuber名】（オリジナル曲の場合もあるため、慎重に）
     // 例: 【歌ってみた】ずうっといっしょ！【ヒメヒナ】
-    // この場合、descriptionから情報を抽出するか、曲名のみ保存
     match = title.match(/【(?:歌ってみた|カバー|cover|COVER)】(.+?)【(.+?)】/);
     if (match) {
         const potentialSongTitle = match[1].trim();
         const potentialArtist = match[2].trim();
 
-        // descriptionから "Original:" や "作詞・作曲:" などを探す
         const descMatch = description.match(/(?:original|作詞[・･]作曲|歌|アーティスト)[：:]\s*(.+?)(?:\n|$)/i);
         if (descMatch) {
             return { songTitle: potentialSongTitle, artistName: descMatch[1].trim() };
         }
-
-        // descriptionに情報がない場合、VTuber名をアーティストとして扱わない
-        // (オリジナル曲の可能性が高いためスキップ)
         return { songTitle: null, artistName: null };
     }
 
@@ -323,15 +387,11 @@ function parseSongInfo(
         let artistName = match[2].trim();
         artistName = artistName.replace(/(?:歌ってみた|カバー|cover|COVER|\s*【.*】)$/i, '').trim();
 
-        // 攻めの設定: 曲名がチャンネル名と一致する場合、逆（アーティスト / 曲名）である可能性が高いので入れ替える
         if (channelName && songTitle.toLowerCase().includes(channelName.toLowerCase())) {
-            console.log(`  🔄 スワップ発生: ${songTitle} <-> ${artistName} (Channel: ${channelName})`);
+            // console.log(`  🔄 スワップ発生: ${songTitle} <-> ${artistName}`);
             const temp = songTitle;
             songTitle = artistName;
             artistName = temp;
-        } else {
-            // ログが多すぎる場合はコメントアウト
-            // console.log(`  ℹ️  スワップ判定: Title='${songTitle}', Channel='${channelName}' -> Match? ${songTitle.toLowerCase().includes(channelName.toLowerCase())}`);
         }
 
         if (songTitle && artistName) {
@@ -344,16 +404,40 @@ function parseSongInfo(
     if (match) {
         const potentialSongTitle = match[2].trim();
         const potentialVtuberName = match[1] ? match[1].trim() : null;
-
-        // descriptionから "Original:" や "作詞・作曲:" などを探す
         const descMatch = description.match(/(?:original|作詞[・･]作曲|歌|アーティスト|本家)[：:]\s*(.+?)(?:\n|$)/i);
         if (descMatch) {
             return { songTitle: potentialSongTitle, artistName: descMatch[1].trim() };
         }
-
-        // descriptionに情報がない場合、タイトル冒頭のVtuber名をフォールバックとして使用
         if (potentialVtuberName) {
             return { songTitle: potentialSongTitle, artistName: potentialVtuberName };
+        }
+    }
+
+    // Fallback for KMNZ Originals (and potentially others in future)
+    // If no cover pattern matched, and it's from KMNZ, and NOT a stream archive
+    if ((channelName && channelName.includes('KMNZ')) || description.includes('KMNZ')) {
+        const excludeKeywords = [
+            '歌枠', '雑談', '配信', 'Radio', 'ラジオ', '告知', 'Trailer', 'Teaser',
+            'Crossfade', 'XFD', 'ライブ', 'LIVE', 'One-Man', 'ワンマン',
+            '生誕', '誕生', '周年', '記念', 'お披露目', '3D', '衣装',
+            'コラボ', 'オフ', 'vlog', 'VLOG', '切り抜き', 'まとめ',
+            '同時視聴', '直前', '振り返り', 'リレー', 'talk', 'Talk', 'TALK'
+        ];
+
+        // Case insensitive check for some keywords might be needed, but Japanese keywords are standard
+        const isExcluded = excludeKeywords.some(keyword => title.includes(keyword));
+
+        // Also exclude if title starts with 【 (common for streams) but not 【歌ってみた】 (already handled)
+        // Actually Pattern 1/2/4/6 handle 【歌ってみた】 so if we are here, it's likely a stream if it has brackets
+        const hasBracketsStart = title.trim().startsWith('【') || title.trim().startsWith('[');
+
+        if (!isExcluded && !hasBracketsStart) {
+            // Remove "MV" or "Official Video" etc?
+            let cleanTitle = title
+                .replace(/\s*[\(（]?(?:MV|Official Video|Music Video|Full ver|short ver)[\)）]?\s*/gi, '')
+                .trim();
+
+            return { songTitle: cleanTitle, artistName: 'KMNZ' };
         }
     }
 
