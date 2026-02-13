@@ -62,8 +62,14 @@ export class SpotifyClient {
 
             // 検索クエリを正規化
             const normalizedSong = normalizeString(songTitle);
-            const normalizedArtist = normalizeString(artistName);
-            const query = `track:${normalizedSong} artist:${normalizedArtist}`;
+            let query = `track:${normalizedSong}`;
+
+            if (artistName) {
+                const normalizedArtist = normalizeString(artistName);
+                if (normalizedArtist) {
+                    query += ` artist:${normalizedArtist}`;
+                }
+            }
 
             const url = new URL(`${this.baseUrl}/search`);
             url.searchParams.set('q', query);

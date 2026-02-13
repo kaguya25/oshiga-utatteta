@@ -3,10 +3,24 @@
  */
 export function parseSongInfo(
     title: string,
-    description: string = ""
+    description: string = "",
+    channelName: string = ""
 ): { songTitle: string | null; artistName: string | null } {
+    // HTMLエンティティのデコード
+    title = title.replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'");
+
     // パターン1: 【歌ってみた】曲名 / アーティスト名
     let match = title.match(/【(?:歌ってみた|カバー|cover|COVER)】(.+?)\s*[/／]\s*(.+?)(?:【|$)/);
+    if (match) {
+        return { songTitle: match[1].trim(), artistName: match[2].trim() };
+    }
+
+    // パターン9 (KMNZ style): 曲名 - アーティスト名 (Cover) / VTuber名
+    match = title.match(/^(.+?)\s*[-−]\s*(.+?)\s*[\(（]Cover[\)）]\s*[/／]/i);
     if (match) {
         return { songTitle: match[1].trim(), artistName: match[2].trim() };
     }
@@ -49,6 +63,27 @@ export function parseSongInfo(
 
     // 抽出できない場合は説明欄もチェック（将来的に実装）
     // TODO: 説明欄から楽曲情報を抽出するロジックを追加
+
+    // Fallback for KMNZ Originals
+    if (channelName && channelName.includes('KMNZ')) {
+        const excludeKeywords = [
+            '歌枠', '雑談', '配信', 'Radio', 'ラジオ', '告知', 'Trailer', 'Teaser',
+            'Crossfade', 'XFD', 'ライブ', 'LIVE', 'One-Man', 'ワンマン',
+            '生誕', '誕生', '周年', '記念', 'お披露目', '3D', '衣装',
+            'コラボ', 'オフ', 'vlog', 'VLOG', '切り抜き', 'まとめ',
+            '同時視聴', '直前', '振り返り', 'リレー', 'talk', 'Talk', 'TALK'
+        ];
+
+        const isExcluded = excludeKeywords.some(keyword => title.includes(keyword));
+        const hasBracketsStart = title.trim().startsWith('【') || title.trim().startsWith('[');
+
+        if (!isExcluded && !hasBracketsStart) {
+            let cleanTitle = title
+                .replace(/\s*[\(（]?(?:MV|Official Video|Music Video|Full ver|short ver)[\)）]?\s*/gi, '')
+                .trim();
+            return { songTitle: cleanTitle, artistName: 'KMNZ' };
+        }
+    }
 
     return { songTitle: null, artistName: null };
 }
