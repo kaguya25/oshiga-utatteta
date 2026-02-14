@@ -13,6 +13,36 @@ export function parseSongInfo(
         .replace(/&quot;/g, '"')
         .replace(/&#39;/g, "'");
 
+    // チャンネル固有ロジック: トゲナシトゲアリ (Girls Band Cry)
+    if (channelName && (channelName.includes('トゲナシトゲアリ') || channelName.includes('ガールズバンドクライ'))) {
+        const excludeKeywords = [
+            '配信', 'オンライン', 'トーク', 'Blu-ray', 'DVD', 'ティザー', '予告',
+            '吹き替え', 'マナー講座', 'シーン集', '仲良し', '耐久', 'ゲーム',
+            '試聴', '公開調印', '発売記念', 'CDドラマ', 'ガルリフ', '劇場版',
+            'ラジオ', 'WEBラジオ', '特報'
+        ];
+        const isExcluded = excludeKeywords.some(keyword => title.includes(keyword));
+        if (isExcluded) {
+            return { songTitle: null, artistName: null };
+        }
+
+        if (title.match(/^#shorts?\s*[「『]/) && !title.includes('トゲナシトゲアリ')) {
+            return { songTitle: null, artistName: null };
+        }
+
+        let tMatch = title.match(/トゲナシトゲアリ[「『](.+?)[」』]/);
+        if (tMatch) {
+            return { songTitle: tMatch[1].trim(), artistName: 'トゲナシトゲアリ' };
+        }
+
+        tMatch = title.match(/トゲナシトゲアリ\s*[-−–]\s*(.+?)(?:\s*【|\s*[-−–]\s*アニメ|\s*$)/);
+        if (tMatch) {
+            return { songTitle: tMatch[1].trim(), artistName: 'トゲナシトゲアリ' };
+        }
+
+        return { songTitle: null, artistName: null };
+    }
+
     // パターン1: 【歌ってみた】曲名 / アーティスト名
     let match = title.match(/【(?:歌ってみた|カバー|cover|COVER)】(.+?)\s*[/／]\s*(.+?)(?:【|$)/);
     if (match) {
@@ -84,6 +114,7 @@ export function parseSongInfo(
             return { songTitle: cleanTitle, artistName: 'KMNZ' };
         }
     }
+
 
     return { songTitle: null, artistName: null };
 }

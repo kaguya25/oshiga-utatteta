@@ -329,6 +329,41 @@ function parseSongInfo(
         .replace(/&quot;/g, '"')
         .replace(/&#39;/g, "'");
 
+    // チャンネル固有ロジック: トゲナシトゲアリ (Girls Band Cry)
+    // 汎用パターンより先に判定しないと誤パースされるため最上部に配置
+    if (channelName && (channelName.includes('トゲナシトゲアリ') || channelName.includes('ガールズバンドクライ'))) {
+        const excludeKeywords = [
+            '配信', 'オンライン', 'トーク', 'Blu-ray', 'DVD', 'ティザー', '予告',
+            '吹き替え', 'マナー講座', 'シーン集', '仲良し', '耐久', 'ゲーム',
+            '試聴', '公開調印', '発売記念', 'CDドラマ', 'ガルリフ', '劇場版',
+            'ラジオ', 'WEBラジオ', '特報'
+        ];
+        const isExcluded = excludeKeywords.some(keyword => title.includes(keyword));
+        if (isExcluded) {
+            return { songTitle: null, artistName: null };
+        }
+
+        // Shorts名セリフ動画を除外 (#shorts 「セリフ」／ パターン)
+        if (title.match(/^#shorts?\s*[「『]/) && !title.includes('トゲナシトゲアリ')) {
+            return { songTitle: null, artistName: null };
+        }
+
+        // パターンA: トゲナシトゲアリ「曲名」 or トゲナシトゲアリ『曲名』
+        let tMatch = title.match(/トゲナシトゲアリ[「『](.+?)[」』]/);
+        if (tMatch) {
+            return { songTitle: tMatch[1].trim(), artistName: 'トゲナシトゲアリ' };
+        }
+
+        // パターンB: トゲナシトゲアリ - 曲名 【from ...】
+        tMatch = title.match(/トゲナシトゲアリ\s*[-−–]\s*(.+?)(?:\s*【|\s*[-−–]\s*アニメ|\s*$)/);
+        if (tMatch) {
+            return { songTitle: tMatch[1].trim(), artistName: 'トゲナシトゲアリ' };
+        }
+
+        // マッチしなかった場合は汎用パターンに流さない
+        return { songTitle: null, artistName: null };
+    }
+
     // パターン1: 【歌ってみた】曲名 / アーティスト名
     let match = title.match(/【(?:歌ってみた|カバー|cover|COVER)】(.+?)\s*[/／]\s*(.+?)(?:【|$)/);
     if (match) {
@@ -440,6 +475,7 @@ function parseSongInfo(
             return { songTitle: cleanTitle, artistName: 'KMNZ' };
         }
     }
+
 
     return { songTitle: null, artistName: null };
 }
