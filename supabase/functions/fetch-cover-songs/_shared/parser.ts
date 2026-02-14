@@ -26,7 +26,7 @@ export function parseSongInfo(
             return { songTitle: null, artistName: null };
         }
 
-        if (title.match(/^#shorts?\s*[「『]/) && !title.includes('トゲナシトゲアリ')) {
+        if (title.match(/^#shorts?/i)) {
             return { songTitle: null, artistName: null };
         }
 

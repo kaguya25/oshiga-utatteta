@@ -343,8 +343,8 @@ function parseSongInfo(
             return { songTitle: null, artistName: null };
         }
 
-        // Shorts名セリフ動画を除外 (#shorts 「セリフ」／ パターン)
-        if (title.match(/^#shorts?\s*[「『]/) && !title.includes('トゲナシトゲアリ')) {
+        // Shorts動画を全て除外
+        if (title.match(/^#shorts?/i)) {
             return { songTitle: null, artistName: null };
         }
 
