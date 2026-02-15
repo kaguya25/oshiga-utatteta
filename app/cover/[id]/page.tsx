@@ -62,7 +62,7 @@ export default async function CoverDetailPage({ params }: PageProps) {
                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                         <circle cx="12" cy="7" r="4"></circle>
                                     </svg>
-                                    <span className="meta-label">Vtuber:</span>
+                                    <span className="meta-label">チャンネル:</span>
                                     <span className="meta-value vtuber-name">{song.vtuber_name}</span>
                                 </div>
                                 <div className="meta-item">
@@ -103,7 +103,7 @@ export default async function CoverDetailPage({ params }: PageProps) {
                             <a
                                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
                                     `🎵 Now Playing: ${song.song_title} / ${song.vtuber_name}\n`
-                                )}&url=${encodeURIComponent(`https://oshiga-utatteta.vercel.app/cover/${song.id}`)}&hashtags=推しが歌ってた,Vtuber`}
+                                )}&url=${encodeURIComponent(`https://oshiga-utatteta.vercel.app/cover/${song.id}`)}&hashtags=推しが歌ってた,カバー曲`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="share-btn-detail"

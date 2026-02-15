@@ -2,7 +2,7 @@
 
 [![Vercel App](https://therealsujitk-vercel-badge.vercel.app/?app=oshiga-utatteta)](https://oshiga-utatteta.vercel.app)
 
-Vtuberがカバーした楽曲を一覧表示し、YouTubeとSpotifyで聴き比べられるWebアプリケーション
+推しのアーティストがカバーした楽曲を一覧表示し、YouTubeとSpotifyで聴き比べられるWebアプリケーション
 
 **Demo:** <https://oshiga-utatteta.vercel.app>
 
@@ -10,8 +10,8 @@ Vtuberがカバーした楽曲を一覧表示し、YouTubeとSpotifyで聴き比
 
 ## 機能
 
-- 一覧表示（カード形式、サムネイル・Vtuber名・曲名・アーティスト名・公開日）
-- リアルタイム検索（Vtuber名・曲名・アーティスト名で絞り込み）
+- 一覧表示（カード形式、サムネイル・チャンネル名・曲名・アーティスト名・公開日）
+- リアルタイム検索（チャンネル名・曲名・アーティスト名で絞り込み）
 - 詳細ページ（YouTube埋め込み再生 + Spotify埋め込み再生）
 - プレイリスト（Zustand + localStorage永続化、連続再生）
 - Xシェアボタン
