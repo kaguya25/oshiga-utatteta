@@ -180,7 +180,7 @@ export default function PlaylistPage() {
                             <a
                                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
                                     `🎵 Now Playing: ${currentSong.song_title} / ${currentSong.vtuber_name}\n`
-                                )}&url=${encodeURIComponent('https://oshiga-utatteta.vercel.app')}&hashtags=推しが歌ってた,Vtuber`}
+                                )}&url=${encodeURIComponent('https://oshiga-utatteta.vercel.app')}&hashtags=推しが歌ってた,カバー曲`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="btn btn-sm share-btn"

@@ -81,7 +81,7 @@ export default function Home() {
             推しが歌ってた楽曲を探そう
           </h1>
           <p className="hero-subtitle fade-in">
-            Vtuberがカバーしたあなたのお気に入りの曲を見つけて、<br />
+            推しがカバーしたあなたのお気に入りの曲を見つけて、<br />
             YouTubeとSpotifyで聴き比べよう
           </p>
           <div className="hero-search fade-in">
