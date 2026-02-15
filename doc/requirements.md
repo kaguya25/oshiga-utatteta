@@ -64,7 +64,6 @@
 - **ランタイム**: React 19
 - **スタイリング**: Vanilla CSS
 - **状態管理**: Zustand (persist middleware, localStorage)
-- **アナリティクス**: Vercel Analytics
 
 ### バックエンド
 

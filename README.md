@@ -29,7 +29,6 @@
 | データベース | Supabase (PostgreSQL, RLS) |
 | Edge Functions | Supabase Edge Functions (Deno) |
 | デプロイ | Vercel |
-| アナリティクス | Vercel Analytics |
 | CI/CD | GitHub Actions (Cron) |
 | 外部API | YouTube Data API v3, Spotify Web API |
 

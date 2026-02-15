@@ -8,7 +8,7 @@ interface SearchBarProps {
     placeholder?: string;
 }
 
-export default function SearchBar({ onSearch, placeholder = '曲名、Vtuber名、アーティスト名で検索...' }: SearchBarProps) {
+export default function SearchBar({ onSearch, placeholder = '曲名、チャンネル名、アーティスト名で検索...' }: SearchBarProps) {
     const [query, setQuery] = useState('');
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
