@@ -1,0 +1,191 @@
+.spotify-track-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.spotify-track-item {
+  list-style: none;
+}
+
+.spotify-track-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-spotify-card);
+  border: 1px solid var(--color-spotify-border);
+  text-decoration: none;
+  color: inherit;
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.spotify-track-link:hover {
+  background: var(--color-spotify-card-hover);
+  border-color: rgba(29, 185, 84, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+.spotify-track-rank {
+  width: 2rem;
+  text-align: center;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-spotify-muted);
+  flex-shrink: 0;
+  transition: color var(--transition-fast);
+}
+
+.spotify-track-link:hover .spotify-track-rank {
+  color: var(--color-spotify-green);
+}
+
+.spotify-track-cover {
+  position: relative;
+  flex-shrink: 0;
+  width: 4rem;
+  height: 4rem;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.spotify-track-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.spotify-track-link:hover .spotify-track-cover-img {
+  transform: scale(1.05);
+}
+
+.spotify-track-cover-placeholder {
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  opacity: 0.3;
+}
+
+.spotify-track-play-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.spotify-track-play-overlay svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: white;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.spotify-track-link:hover .spotify-track-play-overlay {
+  opacity: 1;
+}
+
+.spotify-track-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.spotify-track-name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color var(--transition-fast);
+}
+
+.spotify-track-link:hover .spotify-track-name {
+  color: var(--color-spotify-green);
+}
+
+.spotify-track-artist {
+  font-size: var(--font-size-sm);
+  color: var(--color-spotify-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spotify-track-plays-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  background: rgba(29, 185, 84, 0.15);
+  color: var(--color-spotify-green);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Empty state */
+.spotify-tracks-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+  padding: var(--spacing-xl);
+  border: 2px dashed var(--color-spotify-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-spotify-card);
+}
+
+.spotify-tracks-empty-icon {
+  font-size: 2rem;
+  margin-bottom: var(--spacing-md);
+  opacity: 0.5;
+}
+
+.spotify-tracks-empty h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-sm);
+}
+
+.spotify-tracks-empty p {
+  font-size: var(--font-size-sm);
+  color: var(--color-spotify-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+  .spotify-track-cover {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .spotify-track-link {
+    gap: 1.5rem;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .spotify-track-name {
+    font-size: var(--font-size-lg);
+  }
+}

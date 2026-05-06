@@ -114,3 +114,146 @@
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
 }
+
+/* Spotify Stats nav link */
+.spotify-stats-link {
+    gap: 0.35rem;
+}
+
+.nav-spotify-icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    transition: color 0.2s;
+}
+
+.spotify-stats-link:hover {
+    color: #1DB954;
+}
+
+.spotify-stats-link:hover .nav-spotify-icon {
+    color: #1DB954;
+}
+
+/* Auth area */
+.header-auth {
+    display: flex;
+    align-items: center;
+}
+
+/* Logged-in user profile chip */
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.5rem 0.3rem 0.3rem;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, rgba(255, 62, 165, 0.06), rgba(127, 0, 255, 0.06));
+    border: 1px solid rgba(255, 62, 165, 0.12);
+    transition: all 0.25s ease;
+}
+
+.user-profile:hover {
+    background: linear-gradient(135deg, rgba(255, 62, 165, 0.1), rgba(127, 0, 255, 0.1));
+    border-color: rgba(255, 62, 165, 0.25);
+    box-shadow: 0 2px 12px rgba(255, 62, 165, 0.1);
+}
+
+.user-avatar {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 9999px;
+    object-fit: cover;
+    border: 2px solid rgba(255, 62, 165, 0.4);
+    transition: border-color 0.2s;
+}
+
+.user-profile:hover .user-avatar {
+    border-color: #ff3ea5;
+}
+
+.user-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #374151;
+    max-width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.01em;
+}
+
+.logout-btn {
+    margin-left: 0.25rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(0, 0, 0, 0.03);
+    color: #6b7280;
+    font-family: inherit;
+}
+
+.logout-btn:hover {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+/* Login button */
+.login-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 1.1rem;
+    border-radius: 9999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    border: none;
+    background: linear-gradient(135deg, #1DB954, #1ed760);
+    color: white;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(29, 185, 84, 0.25);
+    letter-spacing: -0.01em;
+}
+
+.login-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(29, 185, 84, 0.35);
+    background: linear-gradient(135deg, #1ed760, #1DB954);
+}
+
+.login-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(29, 185, 84, 0.2);
+}
+
+.login-btn-icon {
+    width: 0.95rem;
+    height: 0.95rem;
+    flex-shrink: 0;
+}
+
+.auth-placeholder {
+    width: 100px;
+}
+
+@media (max-width: 768px) {
+    .user-name {
+        display: none;
+    }
+
+    .user-profile {
+        padding: 0.25rem;
+    }
+
+    .logout-btn {
+        font-size: 0.68rem;
+        padding: 0.25rem 0.5rem;
+    }
+}

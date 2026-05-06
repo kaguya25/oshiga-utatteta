@@ -10,12 +10,14 @@
 
 ## 機能
 
-- 一覧表示（カード形式、サムネイル・チャンネル名・曲名・アーティスト名・公開日）
-- リアルタイム検索（チャンネル名・曲名・アーティスト名で絞り込み）
-- 詳細ページ（YouTube埋め込み再生 + Spotify埋め込み再生）
-- プレイリスト（Zustand + localStorage永続化、連続再生）
-- Xシェアボタン
-- 自動楽曲取得（GitHub Actions Cron → Vercel API Route → Supabase）
+- **カバー曲の一覧・検索**（カード形式、チャンネル名・曲名・アーティスト名で絞り込み）
+- **詳細ページ**（YouTube埋め込み再生 + Spotify楽曲の連携・聴き比べ）
+- **プレイリスト機能**（Zustand + localStorage永続化、連続再生）
+- **Spotify Stats分析**
+  - Spotifyアカウント連携（NextAuth.js）
+  - バックグラウンドでの再生履歴自動同期
+  - パーソナライズされたリスニング分析（再生ランキング、時間帯別ヒートマップ、視聴時間の推移）
+- **自動楽曲取得**（GitHub Actions Cron → Vercel API Route → Supabase）
 
 ---
 
@@ -26,7 +28,8 @@
 | フロントエンド | Next.js 16 (App Router), React 19, TypeScript |
 | スタイリング | Vanilla CSS |
 | 状態管理 | Zustand (persist) |
-| データベース | Supabase (PostgreSQL, RLS) |
+| 認証 | NextAuth.js |
+| データベース | Supabase (PostgreSQL), Prisma (ORM) |
 | Edge Functions | Supabase Edge Functions (Deno) |
 | デプロイ | Vercel |
 | CI/CD | GitHub Actions (Cron) |
@@ -43,18 +46,19 @@ graph TD
     subgraph "Frontend (Vercel)"
         UI[Next.js App]
         Player[YouTube/Spotify Player]
+        Dashboard[Spotify Stats Dashboard]
         Store[Zustand Store]
-        Analytics[Vercel Analytics]
     end
 
-    subgraph "Automation"
-        GHA[GitHub Actions Cron]
-        API[Vercel API Route]
+    subgraph "Backend (Vercel API Routes)"
+        Auth[NextAuth.js]
+        SyncAPI[Spotify Sync API]
+        StatsAPI[Spotify Stats API]
     end
 
-    subgraph "Backend (Supabase)"
-        DB[(PostgreSQL)]
-        EF[Edge Functions]
+    subgraph "Database & ORM"
+        Prisma[Prisma Client]
+        DB[(Supabase PostgreSQL)]
     end
 
     subgraph "External Services"
@@ -62,17 +66,31 @@ graph TD
         Spotify[Spotify Web API]
     end
 
-    User -->|Access| UI
-    UI -->|Fetch Songs| DB
-    UI -->|Persist Playlist| Store
-    UI -->|Playback| Player
-    UI -->|Track| Analytics
+    subgraph "Automation"
+        GHA[GitHub Actions Cron]
+        EF[Supabase Edge Functions]
+    end
 
-    GHA -->|Scheduled Call| API
-    API -->|Invoke| EF
+    User -->|Access| UI
+    User -->|Login| Auth
+    UI -->|Fetch Songs| Prisma
+    UI -->|View Stats| StatsAPI
+    UI -->|Playback| Player
+    
+    Auth -->|OAuth| Spotify
+    
+    StatsAPI --> Prisma
+    SyncAPI -->|Fetch Recent Plays| Spotify
+    SyncAPI --> Prisma
+    
+    GHA -->|Trigger Cover Search| EF
+    GHA -->|Trigger History Sync| SyncAPI
+    
     EF -->|1. Fetch Videos| YouTube
     EF -->|2. Search Tracks| Spotify
     EF -->|3. Upsert| DB
+    
+    Prisma --> DB
 ```
 
 ---
@@ -83,52 +101,35 @@ graph TD
 oshiga-utatteta/
 ├── app/
 │   ├── layout.tsx              # ルートレイアウト
-│   ├── page.tsx                # ホームページ（一覧・検索）
-│   ├── page.css
+│   ├── page.tsx                # ホームページ（一覧・検索・最近聴いた曲）
 │   ├── globals.css             # グローバルCSS
 │   ├── api/
-│   │   └── cron/
-│   │       └── fetch-cover-songs/
-│   │           └── route.ts    # Cron API Route
-│   ├── cover/
-│   │   └── [id]/
-│   │       ├── page.tsx        # 詳細ページ
-│   │       └── page.css
-│   └── playlist/
-│       ├── page.tsx            # プレイリストページ
-│       └── page.css
+│   │   ├── auth/               # NextAuth エンドポイント
+│   │   ├── cron/               # カバー曲取得の定期実行
+│   │   └── spotify/            # Spotify Stats/Sync API
+│   ├── cover/                  # カバー曲詳細ページ
+│   ├── playlist/               # プレイリストページ
+│   └── spotify/                # Spotify Stats ダッシュボードページ
 ├── components/
-│   ├── Header.tsx / .css
-│   ├── CoverSongCard.tsx / .css
-│   ├── SearchBar.tsx / .css
-│   ├── YouTubePlayer.tsx / .css
-│   ├── SpotifyPlayer.tsx / .css
-│   └── Providers.tsx
+│   ├── CoverSongCard.tsx
+│   ├── YouTubePlayer.tsx
+│   ├── SpotifyStats/           # 統計表示コンポーネント群
+│   └── ...
 ├── lib/
-│   ├── supabase.ts             # Supabaseクライアント
-│   ├── store.ts                # Zustand Store（プレイリスト）
-│   └── api-types.ts            # API型定義
-├── types/
-│   └── index.ts                # 共通型定義
+│   ├── prisma.ts               # Prismaクライアント
+│   ├── auth.ts                 # NextAuth設定
+│   ├── spotify/                # Spotify APIクライアント・統計ロジック
+│   └── supabase.ts             # Supabaseクライアント
+├── prisma/
+│   └── schema.prisma           # データベーススキーマ（Supabase）
 ├── scripts/
-│   ├── initial-fetch.ts        # 初回データ取得スクリプト
-│   ├── backfill-spotify.ts     # Spotifyデータ補完
-│   ├── check-unwanted-songs.ts # 不要データチェック
-│   ├── test-parser.ts          # パーサーテスト
+│   ├── import-spotify.ts       # 過去のSpotify履歴インポートスクリプト
 │   └── ...
 ├── supabase/
-│   └── functions/
-│       └── fetch-cover-songs/  # Edge Function
-│           ├── index.ts
-│           └── _shared/
-│               ├── parser.ts   # タイトル解析ロジック
-│               ├── youtube.ts  # YouTube APIクライアント
-│               └── spotify.ts  # Spotify APIクライアント
+│   └── functions/              # Deno Edge Functions
 ├── .github/
-│   └── workflows/
-│       └── fetch-songs.yml     # GitHub Actions Cron
-├── .env.local                  # 環境変数
-└── package.json
+│   └── workflows/              # GitHub Actions Cron設定
+└── .env.local                  # 環境変数
 ```
 
 ---
@@ -152,10 +153,18 @@ npm run dev
 ### 環境変数（.env.local）
 
 ```env
-# Supabase
+# Database & Prisma
+DATABASE_URL="postgresql://postgres.[YOUR-PROJECT]:[PASSWORD]@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres.[YOUR-PROJECT]:[PASSWORD]@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres"
+
+# Supabase (クライアント用)
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
+
+# NextAuth
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret
 
 # YouTube Data API
 YOUTUBE_API_KEY=AIza...

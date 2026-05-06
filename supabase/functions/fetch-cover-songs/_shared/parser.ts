@@ -43,6 +43,26 @@ export function parseSongInfo(
         return { songTitle: null, artistName: null };
     }
 
+    // チャンネル固有ロジック: KMNZ 歌枠
+    // 歌枠配信は曲名なしのため、配信タイトルをそのままカードとして表示する
+    if (channelName && channelName.includes('KMNZ')) {
+        const utawaKuMatch = title.match(/【[^】]*歌枠[^】]*】([^【]+?)(?=【|$)/);
+        if (utawaKuMatch) {
+            const streamTitle = utawaKuMatch[1].trim();
+            if (streamTitle) {
+                let artistName = 'KMNZ';
+                if (title.includes('KMNZTINA') || title.includes('TINA誕生') || title.includes('TINA生誕')) {
+                    artistName = 'KMNZ TINA';
+                } else if (title.includes('KMNZNERO') || title.includes('NERO生誕')) {
+                    artistName = 'KMNZ NERO';
+                } else if (title.includes('KMNZLITA') || title.includes('LITA生誕')) {
+                    artistName = 'KMNZ LITA';
+                }
+                return { songTitle: streamTitle, artistName };
+            }
+        }
+    }
+
     // パターン1: 【歌ってみた】曲名 / アーティスト名
     let match = title.match(/【(?:歌ってみた|カバー|cover|COVER)】(.+?)\s*[/／]\s*(.+?)(?:【|$)/);
     if (match) {
