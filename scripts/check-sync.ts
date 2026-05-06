@@ -19,7 +19,7 @@ async function main() {
   });
 
   if (latestHistory) {
-      console.log(`Latest play: [${latestHistory.played_at.toLocaleString()}] ${latestHistory.track.name} by ${latestHistory.track.artistName}`);
+      console.log(`Latest play: [${latestHistory.played_at.toLocaleString()}] ${latestHistory.track.name} by ${latestHistory.track.artist_name}`);
   } else {
       console.log('No play history found.');
   }
