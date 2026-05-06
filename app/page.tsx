@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { CoverSong } from '@/types';
 import CoverSongCard from '@/components/CoverSongCard';
 import SearchBar from '@/components/SearchBar';
+import { useSession } from 'next-auth/react';
+import { SpotifyTrackList } from '@/components/SpotifyStats/SpotifyTrackList';
 import './page.css';
 
 export default function Home() {
@@ -12,10 +15,17 @@ export default function Home() {
   const [filteredSongs, setFilteredSongs] = useState<CoverSong[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [recentTracks, setRecentTracks] = useState<any[]>([]);
+  const [mounted, setMounted] = useState(false);
+  const { data: session } = useSession();
 
-  // Fetch cover songs from Supabase
   useEffect(() => {
-    const fetchSongs = async () => {
+    setMounted(true);
+  }, []);
+
+  // Fetch cover songs from Supabase and recent tracks
+  useEffect(() => {
+    const fetchData = async () => {
       try {
         const { data, error } = await supabase
           .from('cover_songs')
@@ -24,11 +34,19 @@ export default function Home() {
 
         if (error) {
           console.error('Error fetching songs:', error);
-          return;
+        } else {
+          setSongs(data || []);
+          setFilteredSongs(data || []);
         }
 
-        setSongs(data || []);
-        setFilteredSongs(data || []);
+        // Fetch recent tracks if logged in
+        if (session) {
+          const res = await fetch('/api/spotify/stats?range=day');
+          if (res.ok) {
+            const stats = await res.json();
+            setRecentTracks(stats.topTracks?.slice(0, 4) || []);
+          }
+        }
       } catch (error) {
         console.error('Unexpected error:', error);
       } finally {
@@ -36,8 +54,8 @@ export default function Home() {
       }
     };
 
-    fetchSongs();
-  }, []);
+    fetchData();
+  }, [session]);
 
   // Filter songs based on search query
   useEffect(() => {
@@ -89,6 +107,32 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {mounted && session && recentTracks.length > 0 && (
+        <section className="recent-history-section">
+          <div className="container">
+            <div className="section-header">
+              <h2 className="section-title">最近聴いた曲</h2>
+              <Link href="/spotify" className="view-more">すべて見る →</Link>
+            </div>
+            <div className="recent-tracks-grid">
+              {recentTracks.map((track) => (
+                <div key={track.id} className="mini-track-card">
+                  {track.album_image_url ? (
+                    <img src={track.album_image_url} alt={track.name} className="mini-track-img" />
+                  ) : (
+                    <div className="mini-track-placeholder">🎵</div>
+                  )}
+                  <div className="mini-track-info">
+                    <p className="mini-track-name">{track.name}</p>
+                    <p className="mini-track-artist">{track.artist_name}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="songs-section">
         <div className="container">

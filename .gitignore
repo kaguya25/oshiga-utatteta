@@ -36,8 +36,19 @@ yarn-error.log*
 # vercel
 .vercel
 
+# prisma
+prisma/generated/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 個人データ（Spotifyの再生記録 - IPアドレス等の個人情報を含む）
+/Spotify Extended Streaming History/
+
+# 旧プロジェクト・一時ファイル
+/zatta/
+/scratch/
+*.txt
 
 .vercel
