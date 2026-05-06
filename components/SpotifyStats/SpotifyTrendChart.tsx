@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 
+
 type TrendData = {
   time: string;
   plays: number;
@@ -87,6 +88,9 @@ export function SpotifyTrendChart({ data }: TrendChartProps) {
               axisLine={false}
               tickLine={false}
               tick={{ fill: "#B3B3B3", fontSize: 12 }}
+              tickFormatter={(v: number) =>
+                metric === "durationMin" ? `${v}分` : `${v}回`
+              }
             />
             <Tooltip
               contentStyle={{
@@ -97,10 +101,7 @@ export function SpotifyTrendChart({ data }: TrendChartProps) {
                 borderRadius: "0.5rem",
                 color: "#fff",
               }}
-              formatter={(value: number) => [
-                metric === "durationMin" ? `${value}分` : `${value}回`,
-                metricLabel,
-              ]}
+              labelStyle={{ color: "#B3B3B3", marginBottom: "4px" }}
               itemStyle={{ color: strokeColor }}
             />
             <Area
